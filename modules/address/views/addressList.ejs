@@ -1,0 +1,132 @@
+<%- include('../common/header', {
+    title: "Address Form",
+    moduleName: "Address",
+    formPath: "/address",
+    listPath: "/address/list"
+}) %>
+
+    <style>
+        .buttonContainer {
+            text-align: center;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+    </style>
+
+    <h1 style="text-align: center;">Address List</h1>
+
+    <table border="1" cellpadding="5" style="border-collapse: collapse;; 
+    text-align: left; font-size: 12px; margin: auto;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th>AddressId</th>
+                <th>AddressName</th>
+                <th>Customer Id</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody id="addressTableBody">
+            <tr>
+                <td colspan="4" style="text-align: center;">Loading...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div id="buttonsContainer" class="buttonContainer"></div>
+
+     <script>
+        var page = 1
+        async function loadaddress(page = 1) {
+            const tbody = document.getElementById("addressTableBody");
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Loading...</td></tr>`;
+
+            try {
+                const response = await fetch(`http://localhost:3006/api/address/list?page=${page}`);
+                const data = await response.json();
+                 console.log("API response:", data); 
+
+                if (!data || data.address.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No address found</td></tr>`;
+                    document.getElementById("buttonsContainer").innerHTML = "";
+                    return;
+                }
+
+                tbody.innerHTML = "";
+
+                data.address.forEach(address => {
+                    const row = `
+                        <tr>
+                            <td>${address.addressId}</td>
+                            <td>${address.address}</td>
+                             <td>${address.customerId || ''}</td>
+
+                            <td>
+                                <a href="/address/${address.addressId}" style="color: blue; text-decoration: underline;">Edit</a>
+                                <a onclick="deleteaddress('${address.addressId}')" style="color: blue; text-decoration: underline; cursor:pointer;">Delete</a>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML("beforeend", row);
+                    
+
+                });
+
+                const buttonsContainer = document.getElementById("buttonsContainer");
+                buttonsContainer.innerHTML = "";
+
+                const totalPages = Math.ceil(data.totalRecords / data.limit);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement("button");
+                    btn.textContent = `${i}`;
+                    btn.onclick = () => {
+                        loadaddress(i);
+                    };
+
+                    buttonsContainer.appendChild(btn);
+                }
+
+
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:red;">Error loading data</td></tr>`;
+                document.getElementById("buttonsContainer").innerHTML = "";
+            }
+        }
+
+        async function deleteaddress(addressId) {
+            const url = `http://localhost:3006/api/address/${addressId}`
+            if (confirm("Are u sure want to delete ?")) {
+                const requestOptions = {
+                    method: "DELETE",
+                    redirect: "follow"
+                };
+
+
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'DELETE',
+                    });
+
+                    if (response.ok) {
+                        alert("address deleted successfully!");
+                        window.location.reload()
+                    } else {
+                        const err = await response.text();
+                        alert("Failed to submit form: " + err);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("An error occurred while submitting the form.");
+                }
+            }
+        }
+        loadaddress();
+    </script>
+
+    <%- include('../common/footer') %>

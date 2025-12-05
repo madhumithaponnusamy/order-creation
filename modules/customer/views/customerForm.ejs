@@ -1,0 +1,165 @@
+<%- include('../common/header', {
+    title: "Customer Form",
+    moduleName: "Customer",
+    formPath: "/customer",
+    listPath: "/customer/list"
+}) %>
+
+
+   
+
+    <style>
+        .border {
+            width: 20%;
+            margin: auto;
+
+        }
+        h2{
+            text-align: center;
+        }
+
+        .btn {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .error {
+            color: red;
+            border: solid 1px red;
+            outline: none;
+        }
+
+        .success {
+            color: green;
+            border: solid 1px green;
+            outline: none;
+        }
+    </style>
+
+<h2> Customer Form</h2>
+
+    <form onsubmit="validate(event)">
+        <div class="container">
+            <div class="border">
+                <div class="first-row">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name">
+                </div>
+
+                <div>
+                    <label for="email">Email</label>
+                    <input type="email" id="emailid" name="email">
+                </div>
+
+
+                <div class="third-row">
+                    <label for="phoneNumber">Phone Number</label>
+                    <input type="number" id="telephone" name="phoneNumber">
+                </div>
+            </div>
+
+            <div class="btn">
+                <input type="reset" value="Reset">
+                <input id="submitBtn" type="submit">
+            </div>
+        </div>
+    </form>
+
+    <script>
+
+        const customerId = "<%=customerId %>" || "";
+
+         async function loadcustomer() {
+            if (!customerId) return;
+
+
+            try {
+                const response = await fetch(`http://localhost:3006/api/customer/${customerId}`);
+                const customer = await response.json();
+
+                if (customer.customerId) {
+
+                    document.getElementById("name").value = customer.customerName || '';
+                    document.getElementById("emailid").value = customer.email || '';
+                    document.getElementById("telephone").value = customer.phoneNumber || '';
+                    countryDom.value = customer.countryId || '';
+                }
+
+            } catch (err) {
+                console.error("Error fetching customer data:", err);
+            } 
+        }
+
+
+
+        const customerName = document.getElementById("name");
+        const customerEmail = document.getElementById("emailid");
+        const customerNumber = document.getElementById("telephone");
+
+        async function validate(event) {
+            event.preventDefault();
+            let isFormHasAnyError = false;
+
+            if (!customerName.value.trim()) {
+                customerName.className = "error";
+                isFormHasAnyError = true;
+            } else customerName.className = "success";
+
+
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!customerEmail.value.trim() || !emailPattern.test(customerEmail.value.trim())) {
+                customerEmail.className = "error";
+                isFormHasAnyError = true;
+            } else customerEmail.className = "success";
+
+
+            if (!customerNumber.value.trim() || customerNumber.value.trim().length !== 10) {
+                customerNumber.className = "error";
+                isFormHasAnyError = true;
+            } else customerNumber.className = "success";
+
+            if (isFormHasAnyError) {
+                return
+            };
+
+            const formData = {
+               customerName: customerName.value,
+                email: customerEmail.value,
+                phoneNumber: customerNumber.value,
+            };
+
+
+            try {
+                const url = customerId
+                    ? `http://localhost:3006/api/customer/${customerId}`
+                    : 'http://localhost:3006/api/customer';
+
+                const methodType = customerId ? "PUT" : "POST";
+
+                const response = await fetch(url, {
+                    method: methodType,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.text();
+
+                if (response.ok) {
+                    alert(customerId ? "customer updated successfully!" : "customer added successfully!");
+                    window.location.href = '/customer/list';
+                } else {
+                    alert("Error: " + result);
+                }
+
+            } catch (error) {
+                console.error("Frontend Error:", error);
+                alert("Network error — cannot send data.");
+            }
+        }
+
+        
+        window.addEventListener("DOMContentLoaded", async () => {
+            loadcustomer()
+        });
+    </script>
+    

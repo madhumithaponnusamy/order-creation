@@ -1,0 +1,456 @@
+<%- include('../common/header', { title: "Order Form" , moduleName: "Order" , formPath: "/order/orderForm" ,
+    listPath: "/order/orderlist" }) %>
+
+    <style>
+        .form-group {
+            margin: 0px auto;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            text-align: center;
+            margin: 10px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .error {
+            color: red;
+            border: solid 1px red;
+            outline: none;
+        }
+
+        .success {
+            color: green;
+            border: solid 1px green;
+            outline: none;
+        }
+    </style>
+
+    <h2>Create Order</h2>
+
+    <form id="orderForm" onsubmit="validate(event)">
+        <div class="form-group">
+            <label for="customerId">Customer</label>
+            <select id="customerId" onchange="loadAddress()">
+                <option value="">--Select Customer--</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="addressId">Address</label>
+            <select id="addressId">
+                <option value="">--Select Address--</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="categoryId">Category</label>
+            <select id="categoryId" onchange="loadProducts()">
+                <option value="">--Select Category--</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="productId">Product</label>
+            <select id="productId" onchange="updatePriceAndTotal()">
+                <option value="">--Select Product--</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="price">Price</label>
+            <input type="number" id="price" readonly>
+        </div>
+
+        <div class="form-group">
+            <label for="quantity">Quantity</label>
+            <input type="number" id="quantity" min="1" value="1">
+        </div>
+
+        <div class="form-group">
+            <label for="total">Total</label>
+            <input type="number" id="total" readonly>
+        </div>
+
+        <div class="btn">
+            <input type="reset" value="Reset">
+            <input id="submitBtn" type="submit">
+        </div>
+    </form>
+
+    <script>
+        const orderId = "<%=orderId %>" || ""
+
+
+
+
+        // load customers
+        async function loadCustomers() {
+
+            submitBtn.disabled = true
+            try {
+                const res = await fetch(`http://localhost:3006/api/customer/list`);
+                const data = await res.json();
+
+                const dom = document.getElementById("customerId");
+                dom.innerHTML = `<option value="">--Select Customer--</option>`;
+
+                data.customers.forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c.customerId;
+                    opt.textContent = c.customerName;
+                    dom.appendChild(opt);
+                });
+
+            } catch (err) {
+                console.error("Error loading customers:", err);
+            } finally {
+                submitBtn.disabled = false
+            }
+        }
+
+        async function loadAddress(defaultValue = '') {
+
+            const customerId = document.getElementById("customerId").value;
+            const addressdom = document.getElementById("addressId");
+            addressdom.innerHTML = `<option value="">--Select Address--</option>`;
+
+            if (!customerId) return;
+
+            try {
+                const res = await fetch(`http://localhost:3006/api/address/${customerId}`);
+                const data = await res.json();
+
+                console.log(data);
+                const address = Array.isArray(data) ? data : [data];
+
+                address.forEach(addr => {
+                    const opt = document.createElement("option");
+                    opt.value = addr.addressId;
+                    opt.textContent = addr.address;
+                    addressdom.appendChild(opt);
+                });
+
+
+            } catch (err) {
+                console.error("Error loading addresses:", err);
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "Failed to load address";
+                addressdom.appendChild(option);
+            }
+        }
+
+
+
+        // load categories
+        async function loadCategories() {
+            try {
+                const res = await fetch(`http://localhost:3006/api/category/list`);
+                const data = await res.json();
+
+                const dom = document.getElementById("categoryId");
+                dom.innerHTML = `<option value="">--Select Category--</option>`;
+
+                data.category.forEach(category => {
+                    const option = document.createElement("option");
+                    option.value = category.categoryId;
+                    option.textContent = category.categoryName;
+                    dom.appendChild(option);
+                });
+
+            } catch (err) {
+                console.error("Error loading categories:", err);
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "Failed to load categories";
+                dom.appendChild(option);
+            }
+        }
+
+        // load products by category
+        async function loadProducts(defaultValue = '') {
+
+            const categoryId = document.getElementById("categoryId").value;
+
+            const productdom = document.getElementById("productId");
+
+            productdom.innerHTML = `<option value="">--Select Product--</option>`;
+
+            if (!categoryId) {
+                categoryId = document.getElementById("categoryId").value
+            };
+
+            try {
+
+                const res = await fetch(`http://localhost:3006/api/product/${categoryId}`);
+                const data = await res.json();
+                const products = Array.isArray(data) ? data : [data];
+
+
+                products.forEach(product => {
+                    const opt = document.createElement("option");
+                    opt.value = product.productId;
+                    opt.textContent = product.productName;
+                    opt.dataset.price = product.productPrice;
+                    productdom.appendChild(opt);
+                });
+
+            } catch (err) {
+                console.error("Error loading products:", err);
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "Failed to load products";
+                productdom.appendChild(option);
+            }
+        }
+        //product to price
+        function updatePriceAndTotal() {
+            const selected = document.getElementById("productId").selectedOptions[0];
+
+            const price = selected ? Number(selected.dataset.price) : 0;
+
+            document.getElementById("price").value = price;
+            document.getElementById("quantity").value = 1;
+            document.getElementById("total").value = price;
+
+
+        }
+        //quan and total
+        function updateTotal() {
+            const price = Number(document.getElementById("price").value) || 0;
+            const qty = Number(document.getElementById("quantity").value) || 0;
+
+            document.getElementById("total").value = price * qty;
+        }
+
+
+        //load edit
+        async function loadOrder() {
+            try {
+                const res = await fetch(`http://localhost:3006/api/order/${orderId}`);
+                const data = await res.json();
+                const order = data.order;
+
+
+                if (order) {
+                    await prefillOrder(order);
+                }
+
+
+
+            } catch (err) {
+                console.error("Error loading order:", err);
+            }
+        }
+
+        loadCustomers()
+        loadCategories()
+
+        function disableFields() {
+            document.getElementById("customerId").disabled = true;
+            document.getElementById("categoryId").disabled = true;
+            document.getElementById("productId").disabled = true;
+
+            document.getElementById("price").readOnly = true;
+            document.getElementById("quantity").readOnly = true;
+            document.getElementById("total").readOnly = true;
+
+            // leave address dropdown enabled
+            document.getElementById("addressId").disabled = false;
+        }
+
+        async function prefillOrder() {
+
+            if (!orderId) return;
+
+            document.getElementById("customerId").value = order.customerId;
+            await loadAddress(order.addressId);
+
+
+            document.getElementById("categoryId").value = order.categoryId;
+            await loadProducts(order.productId);
+
+
+            document.getElementById("quantity").value = order.Quantity;
+            document.getElementById("price").value = order.priceAtOrder;
+            document.getElementById("total").value = order.totalPrice;
+
+
+            updateTotal();
+        }
+
+
+          
+            async function init() {
+                await loadCustomers();
+                await loadCategories();
+                await prefillOrder();
+                if (orderId) {
+                    disableFields();
+                }
+
+            }
+
+            window.onload = init;
+
+
+        //validation
+
+        async function validate(event) {
+            event.preventDefault();
+
+            submitBtn.setAttribute("disabled", true);
+
+            let isFormHasAnyError = false;
+
+            const customer = document.getElementById("customerId");
+            const category = document.getElementById("categoryId");
+            const product = document.getElementById("productId");
+            const quantity = document.getElementById("quantity");
+
+
+            if (!customer.value.trim()) {
+                customer.className = "error ";
+                isFormHasAnyError = true;
+            } else {
+                customer.className = "success ";
+            }
+
+            if (!category.value.trim()) {
+                category.className = "error";
+                isFormHasAnyError = true;
+            } else {
+                category.className = "success";
+            }
+
+            if (!quantity.value.trim() || Number(quantity.value) <= 0) {
+                quantity.className = "error";
+                isFormHasAnyError = true;
+            } else {
+                quantity.className = "success";
+            }
+
+            if (!product.value.trim()) {
+                product.className = "error";
+                isFormHasAnyError = true;
+            } else {
+                product.className = "success";
+            }
+
+            const address = document.getElementById("addressId");
+            if (!address.value.trim()) {
+                address.className = "error";
+                isFormHasAnyError = true;
+            } else {
+                address.className = "success";
+            }
+
+
+            if (isFormHasAnyError) {
+                submitBtn.removeAttribute("disabled");
+                return;
+            }
+
+            const productSelect = document.getElementById("productId");
+            const productId = productSelect.value;
+
+            try {
+                const productRes = await fetch(`/api/product/${productId}`);
+                const productData = await productRes.json();
+
+                console.log(productData);
+                const availableStock = productData.productStock;
+
+                if (quantity > availableStock) {
+                    alert(`Only ${availableStock} units available in stock!`);
+                    return;
+                }
+            } catch (err) {
+                console.error("Stock check error:", err);
+                alert("Failed to check stock, please try again.");
+                return;
+            }
+
+
+            const payload = {
+                customerId: document.getElementById("customerId").value,
+                addressId: document.getElementById("addressId").value,
+                categoryId: document.getElementById("categoryId").value,
+                productId: document.getElementById("productId").value,
+                price: Number(document.getElementById("price").value),      // ADD THIS
+                priceAtOrder: Number(document.getElementById("price").value), // ADD THIS
+                quantity: Number(document.getElementById("quantity").value),
+                totalPrice: Number(document.getElementById("total").value)
+            };
+
+
+            console.log("Payload being sent:", payload);
+
+
+
+
+
+
+
+
+            submitBtn.value = "Processing...";
+
+            try {
+                const url = orderId
+                    ? `http://localhost:3006/api/order/${orderId}`
+                    : "http://localhost:3006/api/order";
+
+                const methodType = orderId ? "PUT" : "POST";
+
+                const res = await fetch(url, {
+                    method: methodType,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert(`Order saved successfully!`);
+                    window.location.href = "/order/orderlist";
+                } else {
+                    alert("Error: " + data.error);
+                }
+
+            } catch (err) {
+                alert("Network error");
+            } finally {
+                submitBtn.value = "Submit";
+                submitBtn.removeAttribute("disabled");
+            }
+        }
+
+        // window.addEventListener("DOMContentLoaded", async () => {
+
+        //     submitBtn = document.querySelector('#submitBtn');
+        //     await loadCustomers();
+
+        //     await loadCategories();
+
+        //     await loadOrder();
+
+        //     const productSelect = document.getElementById("productId");
+        //     const quantityInput = document.getElementById("quantity");
+
+        //     productSelect.addEventListener("change", updatePriceAndTotal);
+        //     quantityInput.addEventListener("input", updateTotal);
+
+
+        // });
+
+
+    </script>
+
+
+
+    <%- include('../common/footer') %>

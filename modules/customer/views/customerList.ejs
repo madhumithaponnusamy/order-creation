@@ -1,0 +1,133 @@
+<%- include('../common/header', {
+    title: "Customer List",
+    moduleName: "Customer",
+    formPath: "/customer",
+    listPath: "/customer/list"
+}) %>
+
+
+    <style>
+        .buttonContainer {
+            text-align: center;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+    </style>
+
+    <h1 style="text-align: center;">customer List</h1>
+
+    <table border="1" cellpadding="5" style="border-collapse: collapse;; 
+    text-align: left; font-size: 12px; margin: auto;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th>customerId</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>PhoneNumber</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody id="customerTableBody">
+            <tr>
+                <td colspan="4" style="text-align: center;">Loading...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div id="buttonsContainer" class="buttonContainer"></div>
+
+     <script>
+        var page = 1
+        async function loadcustomers(page = 1) {
+            const tbody = document.getElementById("customerTableBody");
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Loading...</td></tr>`;
+
+            try {
+                const response = await fetch(`http://localhost:3006/api/customer/list?page=${page}`);
+                const data = await response.json();
+                 console.log("API response:", data); 
+
+                if (!data || data.customers.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No customer found</td></tr>`;
+                    document.getElementById("buttonsContainer").innerHTML = "";
+                    return;
+                }
+
+                tbody.innerHTML = "";
+
+                data.customers.forEach(customer => {
+                    const row = `
+                        <tr>
+                            <td>${customer.customerId}</td>
+                            <td>${customer.customerName}</td>
+                            <td>${customer.email}</td>
+                            <td>${customer.phoneNumber}</td>
+                            <td>
+                                <a href="/customer/${customer.customerId}" style="color: blue; text-decoration: underline;">Edit</a>
+                                <a onclick="deletecustomer('${customer.customerId}')" style="color: blue; text-decoration: underline; cursor:pointer;">Delete</a>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML("beforeend", row);
+                    
+
+                });
+
+                const buttonsContainer = document.getElementById("buttonsContainer");
+                buttonsContainer.innerHTML = "";
+
+                const totalPages = Math.ceil(data.totalRecords / data.limit);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement("button");
+                    btn.textContent = `${i}`;
+                    btn.onclick = () => {
+                        loadcustomers(i);
+                    };
+
+                    buttonsContainer.appendChild(btn);
+                }
+
+
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:red;">Error loading data</td></tr>`;
+                document.getElementById("buttonsContainer").innerHTML = "";
+            }
+        }
+
+        async function deletecustomer(customerId) {
+            const url = `http://localhost:3006/api/customer/${customerId}`
+            if (confirm("Are u sure want to delete ?")) {
+                const requestOptions = {
+                    method: "DELETE",
+                    redirect: "follow"
+                };
+
+
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'DELETE',
+                    });
+
+                    if (response.ok) {
+                        alert("customer deleted successfully!");
+                        window.location.reload()
+                    } else {
+                        const err = await response.text();
+                        alert("Failed to submit form: " + err);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("An error occurred while submitting the form.");
+                }
+            }
+        }
+        loadcustomers();
+    </script>
+    <%- include('../common/footer') %>

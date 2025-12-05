@@ -1,0 +1,146 @@
+<%- include('../common/header', {
+    title: "Category Form",
+    moduleName: "Category",
+    formPath: "/category",
+    listPath: "/category/list"
+}) %>
+
+
+    <style>
+        .border {
+            width: 20%;
+            margin: auto;
+
+        }
+
+        .btn {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .error {
+            color: red;
+            border: solid 1px red;
+            outline: none;
+        }
+
+        .success {
+            color: green;
+            border: solid 1px green;
+            outline: none;
+        }
+    </style>
+
+    <form onsubmit="validate(event)">
+        <div class="container">
+            <div class="border">
+                <div class="first-row">
+                    <label for="name">categoryName</label>
+                    <input type="text" id="name" name="name">
+                </div>
+
+
+
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="4" cols="50"
+                    placeholder="Enter description here..."></textarea>
+
+
+                <div class="btn">
+                    <input type="reset" value="Reset">
+                    <input id="submitBtn" type="submit">
+                </div>
+            </div>
+    </form>
+
+    <script>
+
+        const categoryId = "<%=categoryId %>" || "";
+
+        async function loadcategory() {
+            if (!categoryId) return;
+
+
+            try {
+                const response = await fetch(`http://localhost:3006/api/category/${categoryId}`);
+                const category = await response.json();
+
+                if (category.categoryId) {
+
+                    document.getElementById("name").value = category.categoryName || '';
+                    document.getElementById("description").value = category.description || '';
+                }
+
+            } catch (err) {
+                console.error("Error fetching category data:", err);
+            }
+        }
+
+
+
+        const categoryName = document.getElementById("name");
+        const categoryDescription = document.getElementById("description");
+        
+
+        async function validate(event) {
+            event.preventDefault();
+            let isFormHasAnyError = false;
+
+            if (!categoryName.value.trim()) {
+                categoryName.className = "error";
+                isFormHasAnyError = true;
+            } else categoryName.className = "success";
+
+
+
+
+            if (!categoryDescription.value.trim()) {
+                categoryDescription.className = "error";
+                isFormHasAnyError = true;
+            } else categoryDescription.className = "success";
+
+            if (isFormHasAnyError) {
+                return
+            };
+
+            const formData = {
+                categoryName: categoryName.value,
+                description: categoryDescription.value
+            };
+
+
+            try {
+                const url = categoryId
+                    ? `http://localhost:3006/api/category/${categoryId}`
+                    : 'http://localhost:3006/api/category';
+
+                const methodType = categoryId ? "PUT" : "POST";
+
+                const response = await fetch(url, {
+                    method: methodType,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.text();
+
+                if (response.ok) {
+                    alert(categoryId ? "category updated successfully!" : "category added successfully!");
+                    window.location.href = '/category/list';
+                } else {
+                    alert("Error: " + result);
+                }
+
+            } catch (error) {
+                console.error("Frontend Error:", error);
+                alert("Network error — cannot send data.");
+            }
+        }
+
+
+        window.addEventListener("DOMContentLoaded", async () => {
+            loadcategory()
+        });
+    </script>
+
+<%- include('../common/footer') %>

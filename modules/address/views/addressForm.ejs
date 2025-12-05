@@ -1,0 +1,180 @@
+<%- include('../common/header', {
+    title: "Address Form",
+    moduleName: "Address",
+    formPath: "/address",
+    listPath: "/address/list"
+}) %>
+
+    <style>
+        .border {
+            width: 20%;
+            margin: auto;
+
+        }
+        h2{
+            text-align: center;
+        }
+
+        .btn {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .error {
+            color: red;
+            border: solid 1px red;
+            outline: none;
+        }
+
+        .success {
+            color: green;
+            border: solid 1px green;
+            outline: none;
+        }
+    </style>
+
+<h2>Address Form</h2>
+
+    <form onsubmit="validate(event)">
+        <div class="container">
+            <div class="border">
+                <div class="first-row">
+                    <label for="name">Address</label>
+                    <input type="text" id="name" name="addressName">
+                </div>
+
+                <div>
+                    <label>Customer ID</label>
+                    <select id="customerId" name="customerId">
+                        <option value="">--select--</option>
+                    </select>
+                </div>
+
+
+                <div class="btn">
+                    <input type="reset" value="Reset">
+                    <input id="submitBtn" type="submit">
+                </div>
+            </div>
+    </form>
+
+    <script>
+
+        const addressId = "<%=addressId %>" || "";
+
+        async function loadaddress() {
+            if (!addressId) return;
+
+
+            try {
+                const response = await fetch(`http://localhost:3006/api/address/${addressId}`);
+                const address = await response.json();
+
+                if (address.addressId) {
+
+                    document.getElementById("name").value = address.address || '';
+                    return address.customerId;
+                }
+
+            } catch (err) {
+                console.error("Error fetching address data:", err);
+            }
+        }
+
+
+
+        const addressName = document.getElementById("name");
+
+
+        async function validate(event) {
+            event.preventDefault();
+            let isFormHasAnyError = false;
+
+            if (!addressName.value.trim()) {
+                addressName.className = "error";
+                isFormHasAnyError = true;
+            } else addressName.className = "success";
+
+
+
+            if (isFormHasAnyError) {
+                return
+            };
+
+            const formData = {
+                customerId: document.getElementById("customerId").value,
+                address: document.getElementById("name").value
+            };
+
+
+
+            try {
+                const url = addressId
+                    ? `http://localhost:3006/api/address/${addressId}`
+                    : 'http://localhost:3006/api/address';
+
+                const methodType = addressId ? "PUT" : "POST";
+
+                const response = await fetch(url, {
+                    method: methodType,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.text();
+
+                if (response.ok) {
+                    alert(addressId ? "address updated successfully!" : "address added successfully!");
+                    window.location.href = '/address/list';
+                } else {
+                    alert("Error: " + result);
+                }
+
+            } catch (error) {
+                console.error("Frontend Error:", error);
+                alert("Network error — cannot send data.");
+            }
+        }
+
+
+        async function loadCustomers(defaultValue) {
+            const dropdown = document.getElementById("customerId");
+            dropdown.innerHTML = `<option value="">--select--</option>`;
+
+            try {
+                const response = await fetch("http://localhost:3006/api/customer/list?limit=1000"); 
+                const data = await response.json(); 
+
+                console.log("Customer API response:", data);
+                const customers = data.customers;
+
+                customers.forEach(customer => {
+                    const option = document.createElement("option");
+                    option.value = customer.customerId;
+                    option.textContent = customer.customerId; 
+                    dropdown.appendChild(option);
+                });
+
+                if (defaultValue) {
+                    dropdown.value = defaultValue;
+                }
+
+            } catch (err) {
+                console.error("Error loading customers:", err);
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "Failed to load customers";
+                dropdown.appendChild(option);
+            }
+        }
+
+
+
+
+        window.addEventListener("DOMContentLoaded", async () => {
+            const selectedCustomerId = await loadaddress();
+            await loadCustomers(selectedCustomerId);
+
+        });
+    </script>
+<%- include('../common/footer') %>

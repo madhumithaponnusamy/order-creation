@@ -1,0 +1,132 @@
+<%- include('../common/header', {
+    title: "Category List",
+    moduleName: "Category",
+    formPath: "/category",
+    listPath: "/category/list"
+}) %>
+
+    <style>
+        .buttonContainer {
+            text-align: center;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+    </style>
+
+    <h1 style="text-align: center;">category List</h1>
+
+    <table border="1" cellpadding="5" style="border-collapse: collapse;; 
+    text-align: left; font-size: 12px; margin: auto;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th>categoryId</th>
+                <th>categoryName</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody id="categoryTableBody">
+            <tr>
+                <td colspan="4" style="text-align: center;">Loading...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div id="buttonsContainer" class="buttonContainer"></div>
+
+     <script>
+        var page = 1
+        async function loadcategory(page = 1) {
+            const tbody = document.getElementById("categoryTableBody");
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Loading...</td></tr>`;
+
+            try {
+                const response = await fetch(`http://localhost:3006/api/category/list?page=${page}`);
+                const data = await response.json();
+                 console.log("API response:", data); 
+
+                if (!data || data.category.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No category found</td></tr>`;
+                    document.getElementById("buttonsContainer").innerHTML = "";
+                    return;
+                }
+
+                tbody.innerHTML = "";
+
+                data.category.forEach(category => {
+                    const row = `
+                        <tr>
+                            <td>${category.categoryId}</td>
+                            <td>${category.categoryName}</td>
+                           <td>${category.description}</td>
+
+                            <td>
+                                <a href="/category/${category.categoryId}" style="color: blue; text-decoration: underline;">Edit</a>
+                                <a onclick="deletecategory('${category.categoryId}')" style="color: blue; text-decoration: underline; cursor:pointer;">Delete</a>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML("beforeend", row);
+                    
+
+                });
+
+                const buttonsContainer = document.getElementById("buttonsContainer");
+                buttonsContainer.innerHTML = "";
+
+                const totalPages = Math.ceil(data.totalRecords / data.limit);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement("button");
+                    btn.textContent = `${i}`;
+                    btn.onclick = () => {
+                        loadcategory(i);
+                    };
+
+                    buttonsContainer.appendChild(btn);
+                }
+
+
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:red;">Error loading data</td></tr>`;
+                document.getElementById("buttonsContainer").innerHTML = "";
+            }
+        }
+
+        async function deletecategory(categoryId) {
+            const url = `http://localhost:3006/api/category/${categoryId}`
+            if (confirm("Are u sure want to delete ?")) {
+                const requestOptions = {
+                    method: "DELETE",
+                    redirect: "follow"
+                };
+
+
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'DELETE',
+                    });
+
+                    if (response.ok) {
+                        alert("category deleted successfully!");
+                        window.location.reload()
+                    } else {
+                        const err = await response.text();
+                        alert("Failed to submit form: " + err);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("An error occurred while submitting the form.");
+                }
+            }
+        }
+        loadcategory();
+    </script>
+
+    <%- include('../common/footer') %>

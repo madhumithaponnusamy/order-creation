@@ -1,0 +1,137 @@
+<%- include('../common/header', { title: "Order List" , moduleName: "order" , formPath: "/order/orderForm" ,
+    listPath: "/order/orderlist" }) %>
+
+
+    <style>
+        .buttonContainer {
+            text-align: center;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+    </style>
+
+
+    <h1 style="text-align:center;">Order List</h1>
+
+
+    <table border="1" cellpadding="5" style="border-collapse: collapse;; 
+    text-align: left; font-size: 12px; margin: auto;">
+        <thead>
+            <tr style="background-color: #f2f2f2;">
+                <th>Order ID</th>
+                <th>Customer Name</th>
+                <th>customer Address</th>
+                <th>Category</th>
+                <th>Product</th>
+                <th>Price at Order</th>
+                <th>Quantity</th>
+                <th>Total</th>
+                <th>Order At</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody id="customerTableBody">
+            <tr>
+                <td colspan="4" style="text-align: center;">Loading...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div id="buttonsContainer" class="buttonContainer"></div>
+
+
+    <script>
+        var page = 1
+
+        async function loadorders(page = 1) {
+            const tbody = document.getElementById("customerTableBody");
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">Loading...</td></tr>`;
+
+            try {
+                const response = await fetch(`http://localhost:3006/api/order/orderlist?page=${page}&limit=5`);
+                const data = await response.json();
+
+                if (!data || !data.orders || data.orders.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No order found</td></tr>`;
+                    document.getElementById("buttonsContainer").innerHTML = "";
+                    return;
+                }
+
+                tbody.innerHTML = "";
+
+                data.orders.forEach(order => {
+                    const row = `
+                <tr>
+                    <td>${order.orderId}</td>
+                    <td>${order.customerName}</td>
+                    <td>${order.address}</td>
+                    <td>${order.categoryName || "-"}</td>
+                    <td>${order.productName}</td>
+                    <td>${order.priceAtOrder}</td>
+                    <td>${order.quantity}</td>
+                    <td>${order.total}</td>
+                     <td>${order.orderAt}</td>
+                    <td>
+                        <a href="/order/edit/${order.orderId}" style="color: blue; text-decoration: underline;">Edit</a>
+                        <a onclick="deleteorder(${order.orderId})" style="color: blue; text-decoration: underline; cursor:pointer;">Delete</a>
+                    </td>
+                </tr>
+            `;
+                    tbody.insertAdjacentHTML("beforeend", row);
+                });
+
+                const buttonsContainer = document.getElementById("buttonsContainer");
+                buttonsContainer.innerHTML = "";
+
+                const totalPages = Math.ceil(data.totalRecords / data.limit);
+
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement("button");
+                    btn.textContent = `${i}`;
+                    btn.onclick = () => loadorders(i);
+                    buttonsContainer.appendChild(btn);
+                }
+
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:red;">Error loading data</td></tr>`;
+                document.getElementById("buttonsContainer").innerHTML = "";
+            }
+        }
+
+        window.deleteorder = async function (orderId) {
+            if (!orderId) return;
+
+            const url = `http://localhost:3006/api/order/${orderId}`;
+            if (confirm("Are you sure want to delete?")) {
+                try {
+                    const response = await fetch(url, { method: 'DELETE' });
+
+                    if (response.ok) {
+                        alert("Order deleted successfully!");
+                        loadorders(); // reload the table
+                    } else {
+                        const err = await response.text();
+                        alert("Failed to delete: " + err);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    alert("An error occurred while deleting the order.");
+                }
+            }
+        };
+
+
+
+        loadorders();
+
+
+
+
+    </script>
+
+    <%- include('../common/footer') %>

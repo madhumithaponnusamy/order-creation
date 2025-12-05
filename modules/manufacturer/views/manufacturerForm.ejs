@@ -1,0 +1,136 @@
+<%- include('../common/header', {
+    title: "Manufacturer Form",
+    moduleName: "Manufacturer",
+    formPath: "/manufacturer",
+    listPath: "/manufacturer/list"
+}) %>
+
+    <style>
+        .border {
+            width: 20%;
+            margin: auto;
+
+        }
+        h2{
+            text-align: center;
+        }
+
+        .btn {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .error {
+            color: red;
+            border: solid 1px red;
+            outline: none;
+        }
+
+        .success {
+            color: green;
+            border: solid 1px green;
+            outline: none;
+        }
+    </style>
+
+<h2>Manufacturer Form</h2>
+
+    <form onsubmit="validate(event)">
+        <div class="container">
+            <div class="border">
+                <div class="first-row">
+                    <label for="name">manufacturer Name</label>
+                    <input type="text" id="name" name="name">
+                </div>
+
+
+                <div class="btn">
+                    <input type="reset" value="Reset">
+                    <input id="submitBtn" type="submit">
+                </div>
+            </div>
+    </form>
+
+    <script>
+
+        const manufacturerId = "<%=manufacturerId %>" || "";
+
+        async function loadmanufacturer() {
+            if (!manufacturerId) return;
+
+
+            try {
+                const response = await fetch(`http://localhost:3006/api/manufacturer/${manufacturerId}`);
+                const manufacturer = await response.json();
+
+                if (manufacturer.manufacturerId) {
+
+                    document.getElementById("name").value = manufacturer.manufacturerName || '';
+                   
+
+                }
+
+            } catch (err) {
+                console.error("Error fetching manufacturer data:", err);
+            }
+        }
+
+
+
+        const manufacturerName = document.getElementById("name");
+        
+
+        async function validate(event) {
+            event.preventDefault();
+            let isFormHasAnyError = false;
+
+            if (!manufacturerName.value.trim()) {
+                manufacturerName.className = "error";
+                isFormHasAnyError = true;
+            } else manufacturerName.className = "success";
+
+
+
+            if (isFormHasAnyError) {
+                return
+            };
+
+            const formData = {
+                manufacturerName: manufacturerName.value,
+            };
+
+
+            try {
+                const url = manufacturerId
+                    ? `http://localhost:3006/api/manufacturer/${manufacturerId}`
+                    : 'http://localhost:3006/api/manufacturer';
+
+                const methodType = manufacturerId ? "PUT" : "POST";
+
+                const response = await fetch(url, {
+                    method: methodType,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.text();
+
+                if (response.ok) {
+                    alert(manufacturerId ? "manufacturer updated successfully!" : "manufacturer added successfully!");
+                    window.location.href = '/manufacturer/list';
+                } else {
+                    alert("Error: " + result);
+                }
+
+            } catch (error) {
+                console.error("Frontend Error:", error);
+                alert("Network error — cannot send data.");
+            }
+        }
+
+
+        window.addEventListener("DOMContentLoaded", async () => {
+            loadmanufacturer()
+        });
+    </script>
+<%- include('../common/footer') %>

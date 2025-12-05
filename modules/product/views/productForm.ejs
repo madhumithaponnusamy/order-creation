@@ -1,0 +1,268 @@
+<%- include('../common/header', {
+    title: "Product Form",
+    moduleName: "Product",
+    formPath: "/product",
+    listPath: "/product/list"
+}) %>
+    <style>
+        .border {
+            width: 20%;
+            margin: auto;
+
+        }
+
+        .btn {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .error {
+            color: red;
+            border: solid 1px red;
+            outline: none;
+        }
+
+        .success {
+            color: green;
+            border: solid 1px green;
+            outline: none;
+        }
+    </style>
+
+
+    <form onsubmit="validate(event)">
+        <div class="container">
+            <div class="border">
+                <div class="first-row">
+                    <label>Product Name</label>
+                    <input type="text" id="name" name="name">
+                </div>
+
+
+                <div class="third-row">
+                    <label>Product Price</label>
+                    <input type="number" id="price" name="productPrice">
+                </div>
+
+                <div class="fourth-row">
+                    <label>Product Stock</label>
+                    <input type="number" id="stock" name="stock">
+                </div>
+
+                <div class="fifth-row">
+                    <label>Category</label>
+                    <select id="categoryId" name="categoryId">
+                        <option value="">--select--</option>
+                    </select>
+                </div>
+
+                <div class="six-row">
+                    <label>Manufacturer</label>
+                    <select id="manufacturerId" name="manufacturerId">
+                        <option value="">--select--</option>
+                    </select>
+                </div>
+
+
+                <div class="btn">
+                    <input type="reset" value="Reset">
+                    <input id="submitBtn" type="submit">
+                </div>
+            </div>
+    </form>
+
+
+
+    <script>
+
+        const productId = "<%=productId %>" || "";
+
+        let submitDom;
+
+        
+     async function loadproduct() {
+
+    
+    await loadCategories();
+    await loadManufacturers();
+
+    if (!productId) return;
+
+    submitDom.disabled = true;
+
+    try {
+        const response = await fetch(`http://localhost:3006/api/product/${productId}`);
+        const product = await response.json();
+
+        if (product.productId) {
+            document.getElementById("name").value = product.productName || '';
+            document.getElementById("price").value = product.productPrice || '';
+            document.getElementById("stock").value = product.productStock || '';
+
+         
+            document.getElementById("categoryId").value = product.categoryId;
+            document.getElementById("manufacturerId").value = product.manufacturerId;
+        }
+
+    } catch (err) {
+        console.error("Error fetching product data:", err);
+    } finally {
+        submitDom.disabled = false;
+    }
+}
+
+
+
+        async function loadCategories(selectedValue) {
+            const dropdown = document.getElementById("categoryId");
+            dropdown.innerHTML = `<option value="">--select--</option>`;
+            try {
+                const response = await fetch("http://localhost:3006/api/category/list");
+                const data = await response.json();
+
+                data.category.forEach(category => {
+                    const option = document.createElement("option");
+                    option.value = category.categoryId;
+                    option.textContent = category.categoryName;
+                    dropdown.appendChild(option);
+                });
+                if (selectedValue) dropdown.value = selectedValue;
+            } catch (err) {
+                console.error("Error loading categories:", err);
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "Failed to load categories";
+                dropdown.appendChild(option);
+            }
+        }
+
+
+        async function loadManufacturers(selectedValue) {
+            const dropdown = document.getElementById("manufacturerId");
+            dropdown.innerHTML = `<option value="">--select--</option>`;
+            try {
+                const response = await fetch("http://localhost:3006/api/manufacturer/list");
+                const data = await response.json();
+
+                data.manufacturer.forEach(manufacturer => {
+                    const option = document.createElement("option");
+                    option.value = manufacturer.manufacturerId;
+                    option.textContent = manufacturer.manufacturerName;
+                    dropdown.appendChild(option);
+                });
+                if (selectedValue) dropdown.value = selectedValue;
+            } catch (err) {
+                console.error("Error loading categories:", err);
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "Failed to load manufacturer";
+                dropdown.appendChild(option);
+            }
+        }
+
+        async function validate(event) {
+            event.preventDefault();
+
+            let isFormHasAnyError = false;
+
+            const productName = document.getElementById("name");
+            if (!productName.value.trim()) {
+                productName.className = "error";
+                isFormHasAnyError = true;
+            } else {
+                productName.className = "success";
+            }
+
+            const productPrice = document.getElementById("price");
+            if (!productPrice.value.trim()) {
+                productPrice.className = "error";
+                isFormHasAnyError = true;
+            } else {
+                productPrice.className = "success";
+            }
+
+            const productStock = document.getElementById("stock");
+            if (!productStock.value.trim()) {
+                productStock.className = "error";
+                isFormHasAnyError = true;
+            } else {
+                productStock.className = "success";
+            }
+
+            const category = document.getElementById("categoryId");
+            if (!category.value.trim()) {
+                category.className = "error";
+                isFormHasAnyError = true;
+            } else category.className = "success";
+
+            // MANUFACTURER VALIDATION
+            const manufacturer = document.getElementById("manufacturerId");
+            if (!manufacturer.value.trim()) {
+                manufacturer.className = "error";
+                isFormHasAnyError = true;
+            } else manufacturer.className = "success";
+
+            if (isFormHasAnyError) {
+                submitDom.removeAttribute('disabled');
+                return;
+            }
+
+
+
+
+            const formData = {
+                productName: productName.value,
+                productPrice: productPrice.value,
+                productStock: productStock.value,
+                categoryId: categoryId.value,
+                manufacturerId: manufacturerId.value
+            };
+
+            submitDom.value = "processing"
+            submitDom.disabled = true;
+
+
+            try {
+                const url = productId
+                    ? `http://localhost:3006/api/product/${productId}`
+                    : 'http://localhost:3006/api/product';
+
+                const methodType = productId ? "PUT" : "POST";
+
+                const response = await fetch(url, {
+                    method: methodType,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.text();
+
+                if (response.ok) {
+                    alert(productId ? "product updated successfully!" : "product added successfully!");
+                    window.location.href = '/product/list';
+                } else {
+                    alert("Error: " + result);
+                }
+
+            } catch (error) {
+                console.error("Frontend Error:", error);
+                alert("Network error — cannot send data.");
+            } finally {
+                submitDom.value = "submit"
+                submitDom.removeAttribute('disabled')
+            }
+
+        }
+
+
+
+        window.addEventListener("DOMContentLoaded", async () => {
+
+            submitDom = document.querySelector("#submitBtn");
+            await loadproduct();
+        });
+
+
+    </script>
+
+    <%- include('../common/footer') %>

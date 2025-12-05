@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+      
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #e8ecf3);
+            margin: 0;
+            padding: 0;
+        }
+
+      
+        .form-container {
+            width: 450px;
+            margin: 50px auto;
+            background: #ffffff;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+       
+        .form-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 22px;
+        }
+
+       
+        input,
+        select,
+        textarea {
+
+            padding: 10px 12px;
+            margin: 8px 0;
+            border: 1px solid #d0d4db;
+            border-radius: 6px;
+            outline: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background-color: #f8fafc;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: #4a90e2;
+            box-shadow: 0 0 6px rgba(74, 144, 226, 0.4);
+            background-color: #ffffff;
+        }
+
+        /* Label styling */
+        label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        /* Button styling */
+        button {
+
+            border: none;
+            border-radius: 3px;
+            background: #4a90e2;
+            color: white;
+            font-size: 15px;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #357abd;
+        }
+
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+
+        /* Container for all boxes */
+        .nav-bar {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 20px auto;
+        }
+
+        /* Individual nav boxes */
+        .nav-box {
+            background-color: #3a3a3a;
+            border-radius: 10px;
+            width: 150px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Navigation links */
+        .nav-box a {
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 600;
+            color: #f0f0f0;
+            display: block;
+            padding: 8px 0;
+            transition: all 0.3s ease;
+        }
+
+       
+
+        /* Horizontal line under each box */
+        .box-divider {
+            border: none;
+            border-top: 2px solid #2c3e50;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        
+        <div class="nav-bar">
+            <div class="nav-box">
+                <a href="<%= formPath %>">
+                    <%= moduleName %> Form
+                </a>
+            
+            </div>
+
+            <div class="nav-box">
+                <a href="<%= listPath %>">
+                    <%= moduleName %> List
+                </a>
+            </div>
+        </div>
+
+            <hr class="box-divider">
+    </header>
+    <main>

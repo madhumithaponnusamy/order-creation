@@ -1,32 +1,27 @@
+const publicRoutes = ['/api/loginpage', '/api/login'];
 
-const publicRoutes = ['/loginform', '/api/login'];
-
-function checkAuthentication(req, res, next) {
-   
+function checkAuth(req, res, next) {
     if (publicRoutes.includes(req.path)) {
         return next();
     }
 
-  
-    if (req.session.user && req.session.user.id) {
-        console.log(`[AUTH] User ${req.session.user.id} accessing ${req.method} ${req.url}`);
+    if (req.session.userId) {
+        console.log(`[AUTH] User ${req.session.userId} accessing ${req.method} ${req.url}`);
         return next();
     }
 
-   
     console.log(`[AUTH] Unauthenticated access attempt: ${req.method} ${req.url}`);
-    res.redirect("/loginform");
+    res.redirect("/api/loginpage");
 }
 
-
 function AlreadyLoggedIn(req, res, next) {
-    if (req.session.user && req.session.userId) {
-        return res.redirect("/dashboard");
+    if ( req.session.userId) {
+        return res.redirect("/api/dashboard");
     }
     next();
 }
 
 module.exports = {
-    checkAuthentication,
-    AlreadyLoggedIn
+  checkAuth,
+  AlreadyLoggedIn
 };
